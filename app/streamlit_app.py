@@ -227,7 +227,7 @@ else:
     st.warning("Nenhum dado encontrado para este período.")
 
 # =========================
-# MAPA HISTÓRICO DA PAZ — VERSÃO FINAL ESTÁVEL
+# MAPA HISTÓRICO DA PAZ — VERSÃO FINAL LIMPA E COMPATÍVEL
 # =========================
 import time
 
@@ -254,15 +254,12 @@ if len(periodos) == 0:
     st.warning("Ainda não há dados suficientes para gerar o mapa histórico.")
 
 # =========================
-# CASO 2 — APENAS 1 PERÍODO
+# CASO 2 — APENAS 1 PERÍODO (SEM SLIDER, SEM PLAY)
 # =========================
 elif len(periodos) == 1:
     periodo_atual = periodos[0]
 
-    st.info(
-        f"Exibindo período único disponível: {periodo_atual}",
-        key="info_periodo_unico_final"
-    )
+    st.info(f"Exibindo período único disponível: {periodo_atual}")
 
     dfp = df_hist[df_hist["periodo"] == periodo_atual]
 
@@ -286,16 +283,9 @@ elif len(periodos) == 1:
         title=f"Mapa Histórico da Paz — {periodo_atual}"
     )
 
-    st.plotly_chart(
-        fig_hist,
-        use_container_width=True,
-        key="mapa_historico_periodo_unico_final"
-    )
+    st.plotly_chart(fig_hist, use_container_width=True)
 
-    st.success(
-        "A animação será ativada automaticamente quando houver mais de um período histórico.",
-        key="info_animacao_futura_final"
-    )
+    st.success("A animação será ativada automaticamente quando houver mais de um período histórico.")
 
 # =========================
 # CASO 3 — DOIS OU MAIS PERÍODOS (SLIDER + PLAY)
