@@ -86,6 +86,16 @@ def carregar_dados():
 
 df = carregar_dados()
 
+# ============================================================
+# DIAGNÓSTICO TEMPORÁRIO (mostra estrutura real dos dados)
+# ============================================================
+st.sidebar.markdown("### Diagnóstico Temporário")
+
+with st.sidebar.expander("Ver colunas e amostra"):
+    st.write("Colunas encontradas no banco:", list(df.columns))
+    st.write(df.head())
+    st.write(df.tail())
+
 # =========================
 # FILTROS
 # =========================
