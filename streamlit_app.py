@@ -3,17 +3,33 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import os
-import sqlalchemy as sa
 
 st.set_page_config(page_title="Indicador de Paz — Movimento da Paz", layout="wide")
 st.title("Indicador de Paz — Movimento da Paz")
 
 def load_aggregated(year, month):
-    q = f"""
-    SELECT * FROM aggregated_monthly WHERE year = {year} AND month = {month}
-    """
-    with engine.connect() as conn:
-        df = pd.read_sql(q, conn)
+    import sqlite3
+    from pathlib import Path
+
+    BASE_DIR = Path(__file__).resolve().parent
+    DB_PATH = BASE_DIR / "data" / "database" / "paz.db"
+
+    conn = sqlite3.connect(DB_PATH)
+
+    df = pd.read_sql_query(
+        """
+        SELECT c.country_name,
+               m.indicator_value
+        FROM country_metrics m
+        JOIN country_metadata c
+          ON m.country_code = c.country_code
+        WHERE m.year = ? AND m.month = ?
+        """,
+        conn,
+        params=(year, month)
+    )
+
+    conn.close()
     return df
 
 def load_instagram(year, month):
