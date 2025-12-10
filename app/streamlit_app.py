@@ -227,94 +227,100 @@ else:
     st.warning("Nenhum dado encontrado para este período.")
 
 # =========================
-# MAPA HISTÓRICO DA PAZ — ANIMAÇÃO (VERSÃO 100% BLINDADA)
+# MAPA HISTÓRICO DA PAZ — ANIMAÇÃO (DIAGNÓSTICO FINAL)
 # =========================
 import time
+import traceback
 
 st.divider()
 st.subheader("⏳ Mapa Histórico da Paz — Evolução da Consciência Global")
 
-df_hist = df.copy()
-df_hist["year"] = df_hist["year"].astype(int)
-df_hist["month"] = df_hist["month"].astype(int)
-df_hist["periodo"] = df_hist["year"].astype(str) + "-" + df_hist["month"].astype(str).zfill(2)
-df_hist = df_hist.sort_values(["year", "month"])
-periodos = df_hist["periodo"].unique().tolist()
+try:
+    df_hist = df.copy()
 
-if len(periodos) == 0:
-    st.warning("Ainda não há dados suficientes para gerar o mapa histórico.")
+    df_hist["year"] = df_hist["year"].astype(int)
+    df_hist["month"] = df_hist["month"].astype(int)
 
-else:
-    # =========================
-    # INICIALIZAÇÃO SEGURA DO ESTADO
-    # =========================
-    if "slider_historico" not in st.session_state:
-        st.session_state.slider_historico = len(periodos) - 1
-
-    # =========================
-    # CONTROLE MANUAL
-    # =========================
-    st.markdown("### Seleção manual")
-
-    periodo_idx = st.slider(
-        "Selecione o período:",
-        0,
-        len(periodos) - 1,
-        st.session_state.slider_historico
+    df_hist["periodo"] = (
+        df_hist["year"].astype(str)
+        + "-"
+        + df_hist["month"].astype(str).str.zfill(2)
     )
 
-    # Sincroniza o estado
-    st.session_state.slider_historico = periodo_idx
+    df_hist = df_hist.sort_values(["year", "month"])
+    periodos = df_hist["periodo"].unique().tolist()
 
-    # =========================
-    # BOTÃO DE ANIMAÇÃO
-    # =========================
-    st.markdown("### Animação automática")
-    iniciar_animacao = st.button("▶️ Play animação")
+    st.write("Diagnóstico → Períodos disponíveis:", periodos)
 
-    # Placeholder onde o mapa será desenhado
-    mapa_container = st.empty()
+    if len(periodos) == 0:
+        st.warning("Ainda não há dados suficientes para gerar o mapa histórico.")
 
-    def desenhar_mapa(idx):
-        periodo = periodos[idx]
-        dfp = df_hist[df_hist["periodo"] == periodo]
+    else:
+        # Inicialização segura do estado
+        if "slider_historico" not in st.session_state:
+            st.session_state.slider_historico = len(periodos) - 1
 
-        fig_hist = px.choropleth(
-            dfp,
-            locations="country_code",
-            color="indicator_value",
-            hover_name="country_code",
-            color_continuous_scale=[
-                (0.0, "#0f172a"),
-                (0.25, "#1e3a8a"),
-                (0.50, "#0284c7"),
-                (0.70, "#7dd3fc"),
-                (0.85, "#dcfce7"),
-                (1.0, "#ecfdf5"),
-            ],
-            range_color=(
-                df["indicator_value"].min(),
-                df["indicator_value"].max()
-            ),
-            title=f"Mapa Histórico da Paz — {periodos[idx]}"
+        st.markdown("### Seleção manual")
+
+        periodo_idx = st.slider(
+            "Selecione o período:",
+            0,
+            len(periodos) - 1,
+            st.session_state.slider_historico
         )
 
-        fig_hist.update_layout(margin=dict(l=0, r=0, t=50, b=0))
-        mapa_container.plotly_chart(fig_hist, use_container_width=True)
+        st.session_state.slider_historico = periodo_idx
 
-    # Desenhar o mapa inicial
-    desenhar_mapa(periodo_idx)
+        st.markdown("### Animação automática")
+        iniciar_animacao = st.button("▶️ Play animação")
 
-    # =========================
-    # LÓGICA DE ANIMAÇÃO SEGURA
-    # =========================
-    if iniciar_animacao:
-        for i in range(0, len(periodos)):
-            st.session_state.slider_historico = i
-            desenhar_mapa(i)
-            time.sleep(0.6)
+        mapa_container = st.empty()
 
-        st.success("Animação concluída.")
+        def desenhar_mapa(idx):
+            periodo = periodos[idx]
+            dfp = df_hist[df_hist["periodo"] == periodo]
+
+            st.write("🔎 Diagnóstico → período:", periodo)
+            st.write("🔎 Diagnóstico → registros:", len(dfp))
+
+            fig_hist = px.choropleth(
+                dfp,
+                locations="country_code",
+                color="indicator_value",
+                hover_name="country_code",
+                color_continuous_scale=[
+                    (0.0, "#0f172a"),
+                    (0.25, "#1e3a8a"),
+                    (0.50, "#0284c7"),
+                    (0.70, "#7dd3fc"),
+                    (0.85, "#dcfce7"),
+                    (1.0, "#ecfdf5"),
+                ],
+                range_color=(
+                    df["indicator_value"].min(),
+                    df["indicator_value"].max()
+                ),
+                title=f"Mapa Histórico da Paz — {periodo}"
+            )
+
+            fig_hist.update_layout(margin=dict(l=0, r=0, t=50, b=0))
+            mapa_container.plotly_chart(fig_hist, use_container_width=True)
+
+        # Desenho inicial
+        desenhar_mapa(periodo_idx)
+
+        # Lógica do Play
+        if iniciar_animacao:
+            for i in range(0, len(periodos)):
+                st.session_state.slider_historico = i
+                desenhar_mapa(i)
+                time.sleep(0.6)
+
+            st.success("Animação concluída com sucesso.")
+
+except Exception:
+    st.error("🚨 ERRO REAL IDENTIFICADO NA ANIMAÇÃO:")
+    st.code(traceback.format_exc())
 
 # =========================
 # CONTROLE UNIVERSAL (SEM ERRO)
