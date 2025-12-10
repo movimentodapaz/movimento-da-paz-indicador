@@ -227,71 +227,102 @@ else:
     st.warning("Nenhum dado encontrado para este período.")
 
 # =========================
-# MAPA HISTÓRICO DA PAZ (MODO DIAGNÓSTICO)
+# MAPA HISTÓRICO DA PAZ (VERSÃO FINAL CORRIGIDA)
 # =========================
 st.divider()
 st.subheader("⏳ Mapa Histórico da Paz — Evolução da Consciência Global")
 
-try:
-    st.markdown(
-        "Acompanhe a expansão da paz ao longo do tempo, mês a mês, "
-        "revelando a dinâmica vibracional da humanidade."
+st.markdown(
+    "Acompanhe a expansão da paz ao longo do tempo, mês a mês, "
+    "revelando a dinâmica vibracional da humanidade."
+)
+
+# Cópia segura do DataFrame
+df_hist = df.copy()
+
+# Garantir tipos corretos
+df_hist["year"] = df_hist["year"].astype(int)
+df_hist["month"] = df_hist["month"].astype(int)
+
+# Criar coluna de período
+df_hist["periodo"] = (
+    df_hist["year"].astype(str)
+    + "-"
+    + df_hist["month"].astype(str).str.zfill(2)
+)
+
+# Ordenar cronologicamente
+df_hist = df_hist.sort_values(by=["year", "month"])
+
+periodos = df_hist["periodo"].unique().tolist()
+
+# =========================
+# CONTROLE UNIVERSAL (SEM ERRO)
+# =========================
+
+if len(periodos) == 0:
+    st.warning("Ainda não há dados suficientes para gerar o mapa histórico.")
+
+elif len(periodos) == 1:
+    # Apenas um período → mostra direto, sem slider
+    periodo_atual = periodos[0]
+    st.info(f"Exibindo período único disponível: {periodo_atual}")
+
+    df_periodo = df_hist[df_hist["periodo"] == periodo_atual]
+
+    fig_hist = px.choropleth(
+        df_periodo,
+        locations="country_code",
+        color="indicator_value",
+        hover_name="country_code",
+        color_continuous_scale=[
+            (0.0, "#0f172a"),
+            (0.25, "#1e3a8a"),
+            (0.50, "#0284c7"),
+            (0.70, "#7dd3fc"),
+            (0.85, "#dcfce7"),
+            (1.0, "#ecfdf5"),
+        ],
+        range_color=(
+            df["indicator_value"].min(),
+            df["indicator_value"].max()
+        ),
+        title=f"Mapa Histórico da Paz — {periodo_atual}"
     )
 
-    df_hist = df.copy()
+    fig_hist.update_layout(margin=dict(l=0, r=0, t=50, b=0))
+    st.plotly_chart(fig_hist, use_container_width=True)
 
-    df_hist["year"] = df_hist["year"].astype(int)
-    df_hist["month"] = df_hist["month"].astype(int)
-
-    df_hist["periodo"] = (
-        df_hist["year"].astype(str)
-        + "-"
-        + df_hist["month"].astype(str).str.zfill(2)
+else:
+    # Dois ou mais períodos → slider normal
+    periodo_selecionado = st.slider(
+        "Selecione o período:",
+        0,
+        len(periodos) - 1,
+        len(periodos) - 1
     )
 
-    df_hist = df_hist.sort_values(by=["year", "month"])
+    df_periodo = df_hist[df_hist["periodo"] == periodos[periodo_selecionado]]
 
-    periodos = df_hist["periodo"].unique().tolist()
+    fig_hist = px.choropleth(
+        df_periodo,
+        locations="country_code",
+        color="indicator_value",
+        hover_name="country_code",
+        color_continuous_scale=[
+            (0.0, "#0f172a"),
+            (0.25, "#1e3a8a"),
+            (0.50, "#0284c7"),
+            (0.70, "#7dd3fc"),
+            (0.85, "#dcfce7"),
+            (1.0, "#ecfdf5"),
+        ],
+        range_color=(
+            df["indicator_value"].min(),
+            df["indicator_value"].max()
+        ),
+        title=f"Mapa Histórico da Paz — {periodos[periodo_selecionado]}"
+    )
 
-    if len(periodos) == 0:
-        st.warning("Ainda não há dados suficientes para gerar o mapa histórico.")
-    else:
-        periodo_selecionado = st.slider(
-            "Selecione o período:",
-            0,
-            len(periodos) - 1,
-            len(periodos) - 1
-        )
-
-        df_periodo = df_hist[df_hist["periodo"] == periodos[periodo_selecionado]]
-
-        st.write("Diagnóstico — Período selecionado:", periodos[periodo_selecionado])
-        st.write("Diagnóstico — Registros encontrados:", len(df_periodo))
-
-        fig_hist = px.choropleth(
-            df_periodo,
-            locations="country_code",
-            color="indicator_value",
-            hover_name="country_code",
-            color_continuous_scale=[
-                (0.0, "#0f172a"),
-                (0.25, "#1e3a8a"),
-                (0.50, "#0284c7"),
-                (0.70, "#7dd3fc"),
-                (0.85, "#dcfce7"),
-                (1.0, "#ecfdf5"),
-            ],
-            range_color=(
-                df["indicator_value"].min(),
-                df["indicator_value"].max()
-            ),
-            title=f"Mapa Histórico da Paz — {periodos[periodo_selecionado]}"
-        )
-
-        fig_hist.update_layout(margin=dict(l=0, r=0, t=50, b=0))
-        st.plotly_chart(fig_hist, use_container_width=True)
-
-except Exception as e:
-    import traceback
-    st.error("ERRO REAL IDENTIFICADO:")
-    st.code(traceback.format_exc())
+    fig_hist.update_layout(margin=dict(l=0, r=0, t=50, b=0))
+    st.plotly_chart(fig_hist, use_container_width=True)
