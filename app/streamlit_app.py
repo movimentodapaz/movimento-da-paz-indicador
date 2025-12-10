@@ -550,3 +550,112 @@ else:
     )
 
     st.plotly_chart(fig_mensal, use_container_width=True)
+
+# ======================================
+# EXPORTAÇÃO EM PDF DOS RELATÓRIOS
+# ======================================
+import pdfkit
+from io import BytesIO
+import base64
+
+st.divider()
+st.subheader("📄 Exportar Relatório em PDF")
+
+st.markdown(
+    "Gere um relatório em PDF com o conteúdo exibido acima, incluindo gráficos, "
+    "tabelas e informações do período selecionado."
+)
+
+# HTML base do PDF
+def gerar_html_do_relatorio(escopo, modo_relatorio, pais=None, ano=None, tabela=None, grafico_html=None):
+    titulo = "Relatório do Índice Global de Paz"
+    if escopo == "País específico":
+        titulo += f" — {pais}"
+
+    subtitulo = modo_relatorio
+    if ano:
+        subtitulo += f" — {ano}"
+
+    tabela_html = tabela.to_html(index=False)
+
+    html = f"""
+    <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    margin: 30px;
+                }}
+                h1 {{
+                    color: #1a365d;
+                }}
+                h2 {{
+                    color: #2d3748;
+                }}
+                .footer {{
+                    margin-top: 40px;
+                    font-size: 12px;
+                    text-align: center;
+                    color: #555;
+                }}
+                table {{
+                    border-collapse: collapse;
+                    width: 100%;
+                }}
+                table, th, td {{
+                    border: 1px solid #aaa;
+                    padding: 8px;
+                }}
+            </style>
+        </head>
+        <body>
+            <h1>{titulo}</h1>
+            <h2>{subtitulo}</h2>
+
+            <h3>Tabela</h3>
+            {tabela_html}
+
+            <h3>Gráfico</h3>
+            {grafico_html}
+
+            <div class="footer">
+                Movimento da Paz Global — Relatório Gerado Automaticamente
+            </div>
+        </body>
+    </html>
+    """
+    return html
+
+# Capturar escopo e dados do relatório já renderizados acima
+if escopo == "Global":
+    pais_for_pdf = None
+else:
+    pais_for_pdf = pais_escolhido
+
+if modo_relatorio == "Relatório por Ano":
+    tabela_for_pdf = df_anual
+    grafico_html = fig_anual.to_html(full_html=False)
+    ano_for_pdf = None
+else:
+    tabela_for_pdf = df_mensal
+    grafico_html = fig_mensal.to_html(full_html=False)
+    ano_for_pdf = ano_escolhido
+
+# Botão PDF
+if st.button("📄 Baixar PDF"):
+    with st.spinner("Gerando PDF..."):
+        html = gerar_html_do_relatorio(
+            escopo,
+            modo_relatorio,
+            pais=pais_for_pdf,
+            ano=ano_for_pdf,
+            tabela=tabela_for_pdf,
+            grafico_html=grafico_html
+        )
+
+        pdf_bytes = pdfkit.from_string(html, False)
+
+        b64 = base64.b64encode(pdf_bytes).decode()
+        href = f'<a href="data:application/pdf;base64,{b64}" download="relatorio_paz.pdf">Clique aqui para baixar o PDF</a>'
+        st.markdown(href, unsafe_allow_html=True)
