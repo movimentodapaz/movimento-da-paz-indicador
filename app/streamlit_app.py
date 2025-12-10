@@ -3,6 +3,11 @@ import pandas as pd
 import plotly.express as px
 import sqlite3
 from pathlib import Path
+import sqlite3
+
+BASE_DIR = Path(__file__).resolve().parent
+DB_PATH = BASE_DIR / "data" / "database" / "paz.db"
+
 
 # ============================================
 # CONFIGURAÇÃO DA PÁGINA
