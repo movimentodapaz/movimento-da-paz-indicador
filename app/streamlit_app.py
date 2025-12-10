@@ -227,34 +227,83 @@ else:
     st.warning("Nenhum dado encontrado para este período.")
 
 # =========================
-# MAPA HISTÓRICO DA PAZ (VERSÃO FINAL CORRIGIDA)
+# MAPA HISTÓRICO DA PAZ — ANIMAÇÃO
 # =========================
+import time
+
 st.divider()
 st.subheader("⏳ Mapa Histórico da Paz — Evolução da Consciência Global")
 
-st.markdown(
-    "Acompanhe a expansão da paz ao longo do tempo, mês a mês, "
-    "revelando a dinâmica vibracional da humanidade."
-)
-
-# Cópia segura do DataFrame
 df_hist = df.copy()
-
-# Garantir tipos corretos
 df_hist["year"] = df_hist["year"].astype(int)
 df_hist["month"] = df_hist["month"].astype(int)
-
-# Criar coluna de período
-df_hist["periodo"] = (
-    df_hist["year"].astype(str)
-    + "-"
-    + df_hist["month"].astype(str).str.zfill(2)
-)
-
-# Ordenar cronologicamente
-df_hist = df_hist.sort_values(by=["year", "month"])
-
+df_hist["periodo"] = df_hist["year"].astype(str) + "-" + df_hist["month"].astype(str).zfill(2)
+df_hist = df_hist.sort_values(["year", "month"])
 periodos = df_hist["periodo"].unique().tolist()
+
+if len(periodos) == 0:
+    st.warning("Ainda não há dados suficientes para gerar o mapa histórico.")
+
+else:
+    # =========================
+    # Controle manual via slider
+    # =========================
+    st.markdown("### Seleção manual")
+    periodo_idx = st.slider(
+        "Selecione o período:",
+        0,
+        len(periodos) - 1,
+        len(periodos) - 1,
+        key="slider_historico"
+    )
+
+    # =========================
+    # Botão de animação
+    # =========================
+    st.markdown("### Animação automática")
+    iniciar_animacao = st.button("▶️ Play animação")
+
+    # Placeholder onde o mapa será desenhado
+    mapa_container = st.empty()
+
+    def desenhar_mapa(idx):
+        periodo = periodos[idx]
+        dfp = df_hist[df_hist["periodo"] == periodo]
+
+        fig_hist = px.choropleth(
+            dfp,
+            locations="country_code",
+            color="indicator_value",
+            hover_name="country_code",
+            color_continuous_scale=[
+                (0.0, "#0f172a"),
+                (0.25, "#1e3a8a"),
+                (0.50, "#0284c7"),
+                (0.70, "#7dd3fc"),
+                (0.85, "#dcfce7"),
+                (1.0, "#ecfdf5"),
+            ],
+            range_color=(
+                df["indicator_value"].min(),
+                df["indicator_value"].max()
+            ),
+            title=f"Mapa Histórico da Paz — {periodo}"
+        )
+        fig_hist.update_layout(margin=dict(l=0, r=0, t=50, b=0))
+        mapa_container.plotly_chart(fig_hist, use_container_width=True)
+
+    # Desenhar o mapa inicial
+    desenhar_mapa(periodo_idx)
+
+    # =========================
+    # Lógica de animação
+    # =========================
+    if iniciar_animacao:
+        for i in range(0, len(periodos)):
+            st.session_state.slider_historico = i
+            desenhar_mapa(i)
+            time.sleep(0.6)  # velocidade da animação (0.6s por frame)
+        st.success("Animação concluída.")
 
 # =========================
 # CONTROLE UNIVERSAL (SEM ERRO)
