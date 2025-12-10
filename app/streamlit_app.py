@@ -257,44 +257,45 @@ if len(periodos) == 0:
 # CASO 2 — APENAS 1 PERÍODO (SEM SLIDER, SEM PLAY) — CORRIGIDO
 # =========================
 elif len(periodos) == 1:
-    st.error("Diagnóstico ativado para período único")
-    try:
-        periodo_atual = periodos[0]
+    periodo_atual = periodos[0]
 
-        st.write("Período único encontrado:", periodo_atual)
+    st.info(
+        f"Exibindo período único disponível: {periodo_atual}",
+        key="info_periodo_unico_final"
+    )
 
-        dfp = df_hist[df_hist["periodo"] == periodo_atual]
+    dfp = df_hist[df_hist["periodo"] == periodo_atual]
 
-        st.write("Registros encontrados:", len(dfp))
+    fig_hist = px.choropleth(
+        dfp,
+        locations="country_code",
+        color="indicator_value",
+        hover_name="country_code",
+        color_continuous_scale=[
+            (0.0, "#0f172a"),
+            (0.25, "#1e3a8a"),
+            (0.50, "#0284c7"),
+            (0.70, "#7dd3fc"),
+            (0.85, "#dcfce7"),
+            (1.0, "#ecfdf5"),
+        ],
+        range_color=(
+            df["indicator_value"].min(),
+            df["indicator_value"].max()
+        ),
+        title=f"Mapa Histórico da Paz — {periodo_atual}"
+    )
 
-        fig_hist = px.choropleth(
-            dfp,
-            locations="country_code",
-            color="indicator_value",
-            hover_name="country_code",
-            color_continuous_scale=[
-                (0.0, "#0f172a"),
-                (0.25, "#1e3a8a"),
-                (0.50, "#0284c7"),
-                (0.70, "#7dd3fc"),
-                (0.85, "#dcfce7"),
-                (1.0, "#ecfdf5"),
-            ],
-            range_color=(
-                df["indicator_value"].min(),
-                df["indicator_value"].max()
-            ),
-            title=f"Mapa Histórico da Paz — {periodo_atual}"
-        )
+    st.plotly_chart(
+        fig_hist,
+        use_container_width=True,
+        key="mapa_historico_periodo_unico_final"
+    )
 
-        st.plotly_chart(fig_hist, use_container_width=True)
-
-        st.info("Animação será ativada quando houver mais períodos.")
-
-    except Exception as e:
-        import traceback
-        st.error("ERRO REAL NO BLOCO DE PERÍODO ÚNICO:")
-        st.code(traceback.format_exc())
+    st.success(
+        "Animação será ativada automaticamente quando houver mais de um período histórico.",
+        key="info_animacao_futura_final"
+    )
 
 # =========================
 # CASO 3 — DOIS OU MAIS PERÍODOS (SLIDER + PLAY)
