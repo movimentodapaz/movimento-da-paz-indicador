@@ -1,115 +1,176 @@
 import streamlit as st
+import sqlite3
 import pandas as pd
-import plotly.express as px
-import sqlite3
 from pathlib import Path
-import sqlite3
+import plotly.express as px
 
+# =========================
+# CONFIG GERAL DA PÁGINA
+# =========================
+st.set_page_config(
+    page_title="Indicador de Paz — Movimento da Paz",
+    page_icon="🌍",
+    layout="wide"
+)
+
+# =========================
+# ESTILO VISUAL (CSS)
+# =========================
+st.markdown("""
+<style>
+body {
+    background-color: #f7fbff;
+}
+.main-title {
+    font-size: 42px;
+    font-weight: 700;
+    color: #d4af37;
+    text-align: center;
+    margin-bottom: 0;
+}
+.sub-title {
+    font-size: 18px;
+    color: #3b82f6;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 30px;
+}
+.kpi-card {
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
+    text-align: center;
+}
+.kpi-title {
+    font-size: 14px;
+    color: #3b82f6;
+}
+.kpi-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #d4af37;
+}
+.sidebar-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #d4af37;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# =========================
+# TÍTULO PRINCIPAL
+# =========================
+st.markdown("<div class='main-title'>Indicador de Paz — Movimento da Paz</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-title'>Mapa Vibracional Global da Consciência</div>", unsafe_allow_html=True)
+
+# =========================
+# CAMINHO DO BANCO
+# =========================
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "data" / "database" / "paz.db"
 
+st.sidebar.markdown("<div class='sidebar-title'>Filtros</div>", unsafe_allow_html=True)
+st.sidebar.write(f"🗄️ Banco: `{DB_PATH}`")
 
-# ============================================
-# CONFIGURAÇÃO DA PÁGINA
-# ============================================
-st.set_page_config(page_title="Indicador de Paz — Movimento da Paz", layout="wide")
-st.title("Indicador de Paz — Movimento da Paz")
+# =========================
+# CONEXÃO COM BANCO
+# =========================
+@st.cache_data
+def carregar_dados():
+    conn = sqlite3.connect(DB_PATH)
+    df = pd.read_sql("SELECT * FROM country_metrics", conn)
+    conn.close()
+    return df
 
-# ============================================
-# LOCALIZAÇÃO ROBUSTA DO BANCO SQLITE
-# ============================================
-BASE_DIR = Path(__file__).resolve().parent
+df = carregar_dados()
 
-candidatos = [
-    BASE_DIR / "data" / "database" / "paz.db",
-    BASE_DIR.parent / "data" / "database" / "paz.db",
-]
+# =========================
+# FILTROS
+# =========================
+anos = sorted(df["year"].unique())
+meses = sorted(df["month"].unique())
 
-DB_PATH = None
-for caminho in candidatos:
-    if caminho.exists():
-        DB_PATH = caminho
-        break
+ano = st.sidebar.selectbox("Ano", anos[::-1])
+mes = st.sidebar.selectbox("Mês", meses)
 
-if DB_PATH is None:
-    st.error(
-        "❌ Banco de dados `paz.db` não foi encontrado.\n\n"
-        "Caminhos verificados:\n"
-        + "\n".join(f"- {c}" for c in candidatos)
-    )
-    st.stop()
+df_filtrado = df[(df["year"] == ano) & (df["month"] == mes)]
 
-# Opcional: exibir caminho do banco para depuração
-st.caption(f"🗄️ Usando banco de dados em: `{DB_PATH}`")
+# =========================
+# KPI / INDICADORES
+# =========================
+col1, col2, col3, col4 = st.columns(4)
 
-# ============================================
-# FUNÇÃO PARA CARREGAR DADOS AGREGADOS
-# ============================================
-def load_aggregated(year: int, month: int) -> pd.DataFrame:
-    """Carrega o índice de paz por país a partir do SQLite.
-
-    Se houver erro de SQLite, exibe a causa na tela e retorna DataFrame vazio.
-    """
-    try:
-        conn = sqlite3.connect(DB_PATH)
-
-        query = """
-            SELECT 
-                c.country_code AS country_iso3,
-                c.country_name,
-                m.indicator_value AS peace_score_0_100
-            FROM country_metrics m
-            JOIN country_metadata c
-              ON m.country_code = c.country_code
-            WHERE m.year = ? AND m.month = ?
-        """
-
-        df = pd.read_sql_query(query, conn, params=(year, month))
-        conn.close()
-        return df
-
-    except sqlite3.OperationalError as e:
-        st.error(
-            "⚠️ Erro ao acessar o banco SQLite (OperationalError):\n\n"
-            f"`{e}`\n\n"
-            "Verifique se as tabelas `country_metrics` e `country_metadata` "
-            "existem e se foram criadas corretamente."
-        )
-        return pd.DataFrame()
-    except Exception as e:
-        st.error(f"⚠️ Erro inesperado ao carregar dados: `{e}`")
-        return pd.DataFrame()
-
-# ============================================
-# FILTROS (ANO / MÊS)
-# ============================================
-col1, col2 = st.columns([3, 1])
-with col2:
-    st.header("Filtro")
-    year = st.selectbox("Ano", options=list(range(2025, 2031)), index=0)
-    month = st.selectbox("Mês", options=list(range(1, 13)), index=0)
-
-# ============================================
-# MAPA GLOBAL DA PAZ
-# ============================================
-st.subheader(f"Mapa Global — Paz ({year}-{month:02d})")
-
-agg = load_aggregated(year, month)
-
-if agg.empty:
-    st.warning(
-        "Nenhum dado encontrado para este período.\n\n"
-        "Se você acabou de criar o banco, verifique se há registros em "
-        "`country_metrics` para o ano/mês selecionado."
-    )
+if len(df_filtrado) > 0:
+    media_paz = round(df_filtrado["peace_index"].mean(), 2)
+    pais_lider = df_filtrado.sort_values("peace_index", ascending=False).iloc[0]["country"]
+    total_registros = len(df_filtrado)
+    tendencia = "Estável"
 else:
+    media_paz = 0
+    pais_lider = "-"
+    total_registros = 0
+    tendencia = "-"
+
+with col1:
+    st.markdown(f"""
+    <div class='kpi-card'>
+        <div class='kpi-title'>Nível Médio de Paz</div>
+        <div class='kpi-value'>{media_paz}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown(f"""
+    <div class='kpi-card'>
+        <div class='kpi-title'>País em Destaque</div>
+        <div class='kpi-value'>{pais_lider}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown(f"""
+    <div class='kpi-card'>
+        <div class='kpi-title'>Total de Registros</div>
+        <div class='kpi-value'>{total_registros}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col4:
+    st.markdown(f"""
+    <div class='kpi-card'>
+        <div class='kpi-title'>Tendência</div>
+        <div class='kpi-value'>{tendencia}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.divider()
+
+# =========================
+# MAPA PRINCIPAL
+# =========================
+st.subheader(f"🌍 Mapa Global da Paz — {ano}/{mes}")
+
+if len(df_filtrado) > 0:
     fig = px.choropleth(
-        agg,
-        locations="country_iso3",
-        color="peace_score_0_100",
-        color_continuous_scale="Blues",
-        range_color=(0, 100),
-        hover_name="country_name",
-        title="Índice Global da Paz (0–100)",
+        df_filtrado,
+        locations="iso_code",
+        color="peace_index",
+        hover_name="country",
+        color_continuous_scale="sunset",
+        range_color=(df["peace_index"].min(), df["peace_index"].max()),
+        title="Distribuição Global do Índice de Paz"
     )
-    st.plotly_chart(fig, width="stretch")
+    fig.update_layout(margin=dict(l=0, r=0, t=40, b=0))
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.warning("Nenhum dado encontrado para este período.")
+
+# =========================
+# BASE PARA MAPA HISTÓRICO (PRONTA)
+# =========================
+st.divider()
+st.subheader("⏳ Mapa Histórico da Paz (Em Construção)")
+
+st.info("Esta seção permitirá visualizar a evolução vibracional da paz ao longo do tempo, com animação mês a mês.")
