@@ -227,49 +227,47 @@ else:
     st.warning("Nenhum dado encontrado para este período.")
 
 # =========================
-# MAPA HISTÓRICO DA PAZ (VERSÃO BLINDADA)
+# MAPA HISTÓRICO DA PAZ (MODO DIAGNÓSTICO)
 # =========================
 st.divider()
 st.subheader("⏳ Mapa Histórico da Paz — Evolução da Consciência Global")
 
-st.markdown(
-    "Acompanhe a expansão da paz ao longo do tempo, mês a mês, "
-    "revelando a dinâmica vibracional da humanidade."
-)
-
-# Criamos uma CÓPIA para evitar erro de cache
-df_hist = df.copy()
-
-# Garantir tipos corretos
-df_hist["year"] = df_hist["year"].astype(int)
-df_hist["month"] = df_hist["month"].astype(int)
-
-# Criar coluna temporal segura
-df_hist["periodo"] = (
-    df_hist["year"].astype(str)
-    + "-"
-    + df_hist["month"].astype(str).str.zfill(2)
-)
-
-# Ordenação correta
-df_hist = df_hist.sort_values(by=["year", "month"])
-
-periodos = df_hist["periodo"].unique().tolist()
-
-# Proteção total contra lista vazia
-if len(periodos) == 0:
-    st.warning("Ainda não há dados suficientes para gerar o mapa histórico.")
-else:
-    periodo_selecionado = st.slider(
-        "Selecione o período:",
-        0,
-        len(periodos) - 1,
-        len(periodos) - 1
+try:
+    st.markdown(
+        "Acompanhe a expansão da paz ao longo do tempo, mês a mês, "
+        "revelando a dinâmica vibracional da humanidade."
     )
 
-    df_periodo = df_hist[df_hist["periodo"] == periodos[periodo_selecionado]]
+    df_hist = df.copy()
 
-    if len(df_periodo) > 0:
+    df_hist["year"] = df_hist["year"].astype(int)
+    df_hist["month"] = df_hist["month"].astype(int)
+
+    df_hist["periodo"] = (
+        df_hist["year"].astype(str)
+        + "-"
+        + df_hist["month"].astype(str).str.zfill(2)
+    )
+
+    df_hist = df_hist.sort_values(by=["year", "month"])
+
+    periodos = df_hist["periodo"].unique().tolist()
+
+    if len(periodos) == 0:
+        st.warning("Ainda não há dados suficientes para gerar o mapa histórico.")
+    else:
+        periodo_selecionado = st.slider(
+            "Selecione o período:",
+            0,
+            len(periodos) - 1,
+            len(periodos) - 1
+        )
+
+        df_periodo = df_hist[df_hist["periodo"] == periodos[periodo_selecionado]]
+
+        st.write("Diagnóstico — Período selecionado:", periodos[periodo_selecionado])
+        st.write("Diagnóstico — Registros encontrados:", len(df_periodo))
+
         fig_hist = px.choropleth(
             df_periodo,
             locations="country_code",
@@ -290,10 +288,10 @@ else:
             title=f"Mapa Histórico da Paz — {periodos[periodo_selecionado]}"
         )
 
-        fig_hist.update_layout(
-            margin=dict(l=0, r=0, t=50, b=0)
-        )
-
+        fig_hist.update_layout(margin=dict(l=0, r=0, t=50, b=0))
         st.plotly_chart(fig_hist, use_container_width=True)
-    else:
-        st.warning("Nenhum dado disponível para este período.")
+
+except Exception as e:
+    import traceback
+    st.error("ERRO REAL IDENTIFICADO:")
+    st.code(traceback.format_exc())
