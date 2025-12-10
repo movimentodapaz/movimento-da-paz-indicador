@@ -227,47 +227,102 @@ else:
     st.warning("Nenhum dado encontrado para este período.")
 
 # =========================
-# MAPA HISTÓRICO — DIAGNÓSTICO GLOBAL
+# MAPA HISTÓRICO DA PAZ — VERSÃO FINAL ESTÁVEL
 # =========================
 import time
-import traceback
 
 st.divider()
-st.subheader("⏳ Mapa Histórico da Paz — Diagnóstico Global Ativado")
+st.subheader("⏳ Mapa Histórico da Paz — Evolução da Consciência Global")
 
-try:
-    # Preparação dos dados
-    df_hist = df.copy()
-    df_hist["year"] = df_hist["year"].astype(int)
-    df_hist["month"] = df_hist["month"].astype(int)
+df_hist = df.copy()
+df_hist["year"] = df_hist["year"].astype(int)
+df_hist["month"] = df_hist["month"].astype(int)
 
-    df_hist["periodo"] = (
-        df_hist["year"].astype(str)
-        + "-"
-        + df_hist["month"].astype(str).str.zfill(2)
+df_hist["periodo"] = (
+    df_hist["year"].astype(str)
+    + "-"
+    + df_hist["month"].astype(str).str.zfill(2)
+)
+
+df_hist = df_hist.sort_values(["year", "month"])
+periodos = df_hist["periodo"].unique().tolist()
+
+# =========================
+# CASO 1 — NENHUM PERÍODO
+# =========================
+if len(periodos) == 0:
+    st.warning("Ainda não há dados suficientes para gerar o mapa histórico.")
+
+# =========================
+# CASO 2 — APENAS 1 PERÍODO
+# =========================
+elif len(periodos) == 1:
+    periodo_atual = periodos[0]
+
+    st.info(
+        f"Exibindo período único disponível: {periodo_atual}",
+        key="info_periodo_unico_final"
     )
 
-    df_hist = df_hist.sort_values(["year", "month"])
-    periodos = df_hist["periodo"].unique().tolist()
+    dfp = df_hist[df_hist["periodo"] == periodo_atual]
 
-    st.write("🔍 DIAGNÓSTICO — Lista de períodos:", periodos)
+    fig_hist = px.choropleth(
+        dfp,
+        locations="country_code",
+        color="indicator_value",
+        hover_name="country_code",
+        color_continuous_scale=[
+            (0.0, "#0f172a"),
+            (0.25, "#1e3a8a"),
+            (0.50, "#0284c7"),
+            (0.70, "#7dd3fc"),
+            (0.85, "#dcfce7"),
+            (1.0, "#ecfdf5"),
+        ],
+        range_color=(
+            df["indicator_value"].min(),
+            df["indicator_value"].max()
+        ),
+        title=f"Mapa Histórico da Paz — {periodo_atual}"
+    )
 
-    # ----------------------------
-    # CASO 0 PERÍODOS
-    # ----------------------------
-    if len(periodos) == 0:
-        st.warning("Nenhum período encontrado no histórico.")
-    
-    # ----------------------------
-    # CASO 1 PERÍODO
-    # ----------------------------
-    elif len(periodos) == 1:
-        st.write("🔍 DIAGNÓSTICO — Período único detectado")
+    st.plotly_chart(
+        fig_hist,
+        use_container_width=True,
+        key="mapa_historico_periodo_unico_final"
+    )
 
-        periodo_atual = periodos[0]
-        dfp = df_hist[df_hist["periodo"] == periodo_atual]
+    st.success(
+        "A animação será ativada automaticamente quando houver mais de um período histórico.",
+        key="info_animacao_futura_final"
+    )
 
-        st.write("🔍 Registros no período único:", len(dfp))
+# =========================
+# CASO 3 — DOIS OU MAIS PERÍODOS (SLIDER + PLAY)
+# =========================
+else:
+    if "slider_historico" not in st.session_state:
+        st.session_state.slider_historico = len(periodos) - 1
+
+    st.markdown("### Seleção manual")
+
+    periodo_idx = st.slider(
+        "Selecione o período:",
+        0,
+        len(periodos) - 1,
+        st.session_state.slider_historico
+    )
+
+    st.session_state.slider_historico = periodo_idx
+
+    st.markdown("### Animação automática")
+    iniciar_animacao = st.button("▶️ Play animação")
+
+    mapa_container = st.empty()
+
+    def desenhar_mapa(idx):
+        periodo = periodos[idx]
+        dfp = df_hist[df_hist["periodo"] == periodo]
 
         fig_hist = px.choropleth(
             dfp,
@@ -286,71 +341,21 @@ try:
                 df["indicator_value"].min(),
                 df["indicator_value"].max()
             ),
-            title=f"Mapa Histórico — {periodo_atual}"
+            title=f"Mapa Histórico da Paz — {periodo}"
         )
 
-        st.plotly_chart(fig_hist, use_container_width=True)
+        fig_hist.update_layout(margin=dict(l=0, r=0, t=50, b=0))
+        mapa_container.plotly_chart(fig_hist, use_container_width=True)
 
-        st.info("Quando houver mais períodos, o slider e a animação aparecerão.")
+    desenhar_mapa(periodo_idx)
 
-    # ----------------------------
-    # CASO 2+ PERÍODOS
-    # ----------------------------
-    else:
-        st.write("🔍 DIAGNÓSTICO — Múltiplos períodos detectados")
+    if iniciar_animacao:
+        for i in range(0, len(periodos)):
+            st.session_state.slider_historico = i
+            desenhar_mapa(i)
+            time.sleep(0.6)
 
-        if "slider_historico" not in st.session_state:
-            st.session_state.slider_historico = len(periodos) - 1
-
-        periodo_idx = st.slider(
-            "Selecione o período:",
-            0,
-            len(periodos) - 1,
-            st.session_state.slider_historico
-        )
-        st.session_state.slider_historico = periodo_idx
-
-        mapa_container = st.empty()
-
-        def desenhar(i):
-            periodo = periodos[i]
-            dfp = df_hist[df_hist["periodo"] == periodo]
-            st.write("🔍 Renderizando período:", periodo)
-
-            fig_hist = px.choropleth(
-                dfp,
-                locations="country_code",
-                color="indicator_value",
-                hover_name="country_code",
-                color_continuous_scale=[
-                    (0.0, "#0f172a"),
-                    (0.25, "#1e3a8a"),
-                    (0.50, "#0284c7"),
-                    (0.70, "#7dd3fc"),
-                    (0.85, "#dcfce7"),
-                    (1.0, "#ecfdf5"),
-                ],
-                range_color=(
-                    df["indicator_value"].min(),
-                    df["indicator_value"].max()
-                ),
-                title=f"Mapa Histórico — {periodo}"
-            )
-            fig_hist.update_layout(margin=dict(l=0, r=0, t=50, b=0))
-            mapa_container.plotly_chart(fig_hist, use_container_width=True)
-
-        desenhar(periodo_idx)
-
-        if st.button("▶️ Play"):
-            for i in range(len(periodos)):
-                desenhar(i)
-                time.sleep(0.5)
-
-            st.success("Animação concluída.")
-
-except Exception:
-    st.error("🔥 ERRO REAL IDENTIFICADO:")
-    st.code(traceback.format_exc())
+        st.success("Animação concluída.")
 
 # =========================
 # CONTROLE UNIVERSAL (SEM ERRO)
