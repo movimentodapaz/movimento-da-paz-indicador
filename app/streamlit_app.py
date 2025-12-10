@@ -91,8 +91,9 @@ st.markdown(
     <div class="header-container">
         <div class="header-title">INDICADOR DE PAZ — MOVIMENTO DA PAZ</div>
         <div class="header-subtitle">
-            Mapa vibracional global da consciência — da guerra ao Amor em ação
-        </div>
+    Mapa vibracional global da consciência — a expansão da paz em ação
+    </div>
+
     </div>
     """,
     unsafe_allow_html=True,
@@ -209,7 +210,14 @@ if len(df_filtrado) > 0:
         locations="country_code",
         color="indicator_value",
         hover_name="country_code",
-        color_continuous_scale="sunset",
+        color_continuous_scale=[
+            (0.0, "#0f172a"),   # muito escuro (níveis mais baixos)
+            (0.25, "#1e3a8a"),  # azul profundo
+            (0.50, "#0284c7"),  # azul médio
+            (0.70, "#7dd3fc"),  # azul bem claro
+            (0.85, "#dcfce7"),  # verde muito claro (acima de ~80%)
+            (1.0, "#ecfdf5"),   # verde quase branco (99–100%)
+        ],
         range_color=(df["indicator_value"].min(), df["indicator_value"].max()),
         title="Distribuição Global do Índice de Paz",
     )
