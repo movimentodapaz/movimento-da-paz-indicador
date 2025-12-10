@@ -18,43 +18,24 @@ st.set_page_config(
 # =========================
 st.markdown("""
 <style>
-body {
-    background-color: #f7fbff;
-}
+body { background-color: #f7fbff; }
 .main-title {
-    font-size: 42px;
-    font-weight: 700;
-    color: #d4af37;
-    text-align: center;
-    margin-bottom: 0;
+    font-size: 42px; font-weight: 700; color: #d4af37;
+    text-align: center; margin-bottom: 0;
 }
 .sub-title {
-    font-size: 18px;
-    color: #3b82f6;
-    text-align: center;
-    margin-top: 0;
-    margin-bottom: 30px;
+    font-size: 18px; color: #3b82f6;
+    text-align: center; margin-top: 0; margin-bottom: 30px;
 }
 .kpi-card {
-    background: white;
-    padding: 20px;
-    border-radius: 16px;
+    background: white; padding: 20px; border-radius: 16px;
     box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
     text-align: center;
 }
-.kpi-title {
-    font-size: 14px;
-    color: #3b82f6;
-}
-.kpi-value {
-    font-size: 32px;
-    font-weight: 700;
-    color: #d4af37;
-}
+.kpi-title { font-size: 14px; color: #3b82f6; }
+.kpi-value { font-size: 32px; font-weight: 700; color: #d4af37; }
 .sidebar-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: #d4af37;
+    font-size: 22px; font-weight: 700; color: #d4af37;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -86,16 +67,6 @@ def carregar_dados():
 
 df = carregar_dados()
 
-# ============================================================
-# DIAGNÓSTICO TEMPORÁRIO (mostra estrutura real dos dados)
-# ============================================================
-st.sidebar.markdown("### Diagnóstico Temporário")
-
-with st.sidebar.expander("Ver colunas e amostra"):
-    st.write("Colunas encontradas no banco:", list(df.columns))
-    st.write(df.head())
-    st.write(df.tail())
-
 # =========================
 # FILTROS
 # =========================
@@ -113,8 +84,8 @@ df_filtrado = df[(df["year"] == ano) & (df["month"] == mes)]
 col1, col2, col3, col4 = st.columns(4)
 
 if len(df_filtrado) > 0:
-    media_paz = round(df_filtrado["peace_index"].mean(), 2)
-    pais_lider = df_filtrado.sort_values("peace_index", ascending=False).iloc[0]["country"]
+    media_paz = round(df_filtrado["indicator_value"].mean(), 2)
+    pais_lider = df_filtrado.sort_values("indicator_value", ascending=False).iloc[0]["country_code"]
     total_registros = len(df_filtrado)
     tendencia = "Estável"
 else:
@@ -165,11 +136,11 @@ st.subheader(f"🌍 Mapa Global da Paz — {ano}/{mes}")
 if len(df_filtrado) > 0:
     fig = px.choropleth(
         df_filtrado,
-        locations="iso_code",
-        color="peace_index",
-        hover_name="country",
+        locations="country_code",
+        color="indicator_value",
+        hover_name="country_code",
         color_continuous_scale="sunset",
-        range_color=(df["peace_index"].min(), df["peace_index"].max()),
+        range_color=(df["indicator_value"].min(), df["indicator_value"].max()),
         title="Distribuição Global do Índice de Paz"
     )
     fig.update_layout(margin=dict(l=0, r=0, t=40, b=0))
@@ -178,9 +149,8 @@ else:
     st.warning("Nenhum dado encontrado para este período.")
 
 # =========================
-# BASE PARA MAPA HISTÓRICO (PRONTA)
+# BASE PARA MAPA HISTÓRICO
 # =========================
 st.divider()
 st.subheader("⏳ Mapa Histórico da Paz (Em Construção)")
-
-st.info("Esta seção permitirá visualizar a evolução vibracional da paz ao longo do tempo, com animação mês a mês.")
+st.info("Esta seção permitirá visualizar a evolução vibracional da paz ao longo do tempo.")
