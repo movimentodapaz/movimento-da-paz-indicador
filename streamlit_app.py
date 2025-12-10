@@ -1,84 +1,102 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import os
 import sqlite3
 from pathlib import Path
 
-# =========================================================
+# ============================================
 # CONFIGURAÇÃO DA PÁGINA
-# =========================================================
+# ============================================
 st.set_page_config(page_title="Indicador de Paz — Movimento da Paz", layout="wide")
 st.title("Indicador de Paz — Movimento da Paz")
 
-# =========================================================
-# CAMINHO DO BANCO SQLITE (CORRETO PARA STREAMLIT CLOUD)
-# =========================================================
-BASE_DIR = Path(__file__).resolve().parents[1]
-DB_PATH = BASE_DIR / "data" / "database" / "paz.db"
+# ============================================
+# LOCALIZAÇÃO ROBUSTA DO BANCO SQLITE
+# ============================================
+BASE_DIR = Path(__file__).resolve().parent
 
-# =========================================================
-# FUNÇÃO: CARREGAR DADOS AGREGADOS DE PAZ
-# =========================================================
-def load_aggregated(year, month):
-    conn = sqlite3.connect(DB_PATH)
+candidatos = [
+    BASE_DIR / "data" / "database" / "paz.db",
+    BASE_DIR.parent / "data" / "database" / "paz.db",
+]
 
-    df = pd.read_sql_query(
-        """
-        SELECT 
-            c.country_code AS country_iso3,
-            c.country_name,
-            m.indicator_value AS peace_score_0_100
-        FROM country_metrics m
-        JOIN country_metadata c
-          ON m.country_code = c.country_code
-        WHERE m.year = ? AND m.month = ?
-        """,
-        conn,
-        params=(year, month)
+DB_PATH = None
+for caminho in candidatos:
+    if caminho.exists():
+        DB_PATH = caminho
+        break
+
+if DB_PATH is None:
+    st.error(
+        "❌ Banco de dados `paz.db` não foi encontrado.\n\n"
+        "Caminhos verificados:\n"
+        + "\n".join(f"- {c}" for c in candidatos)
     )
+    st.stop()
 
-    conn.close()
-    return df
+# Opcional: exibir caminho do banco para depuração
+st.caption(f"🗄️ Usando banco de dados em: `{DB_PATH}`")
 
-# =========================================================
-# FUNÇÃO: CARREGAR DADOS DE "PACIFICADORES" (INSTAGRAM)
-# =========================================================
-def load_instagram(year, month):
-    conn = sqlite3.connect(DB_PATH)
+# ============================================
+# FUNÇÃO PARA CARREGAR DADOS AGREGADOS
+# ============================================
+def load_aggregated(year: int, month: int) -> pd.DataFrame:
+    """Carrega o índice de paz por país a partir do SQLite.
 
-    df = pd.read_sql_query(
+    Se houver erro de SQLite, exibe a causa na tela e retorna DataFrame vazio.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+
+        query = """
+            SELECT 
+                c.country_code AS country_iso3,
+                c.country_name,
+                m.indicator_value AS peace_score_0_100
+            FROM country_metrics m
+            JOIN country_metadata c
+              ON m.country_code = c.country_code
+            WHERE m.year = ? AND m.month = ?
         """
-        SELECT country_iso3, followers_count
-        FROM instagram_followers
-        WHERE year = ? AND month = ?
-        """,
-        conn,
-        params=(year, month)
-    )
 
-    conn.close()
-    return df
+        df = pd.read_sql_query(query, conn, params=(year, month))
+        conn.close()
+        return df
 
-# =========================================================
-# FILTROS LATERAIS
-# =========================================================
+    except sqlite3.OperationalError as e:
+        st.error(
+            "⚠️ Erro ao acessar o banco SQLite (OperationalError):\n\n"
+            f"`{e}`\n\n"
+            "Verifique se as tabelas `country_metrics` e `country_metadata` "
+            "existem e se foram criadas corretamente."
+        )
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"⚠️ Erro inesperado ao carregar dados: `{e}`")
+        return pd.DataFrame()
+
+# ============================================
+# FILTROS (ANO / MÊS)
+# ============================================
 col1, col2 = st.columns([3, 1])
-
 with col2:
     st.header("Filtro")
     year = st.selectbox("Ano", options=list(range(2025, 2031)), index=0)
     month = st.selectbox("Mês", options=list(range(1, 13)), index=0)
 
-# =========================================================
+# ============================================
 # MAPA GLOBAL DA PAZ
-# =========================================================
+# ============================================
 st.subheader(f"Mapa Global — Paz ({year}-{month:02d})")
 
 agg = load_aggregated(year, month)
 
 if agg.empty:
-    st.warning("Nenhum dado agregado encontrado para este período. Verifique a tabela country_metrics.")
+    st.warning(
+        "Nenhum dado encontrado para este período.\n\n"
+        "Se você acabou de criar o banco, verifique se há registros em "
+        "`country_metrics` para o ano/mês selecionado."
+    )
 else:
     fig = px.choropleth(
         agg,
@@ -89,50 +107,4 @@ else:
         hover_name="country_name",
         title="Índice Global da Paz (0–100)",
     )
-
     st.plotly_chart(fig, width="stretch")
-
-# =========================================================
-# MAPA DE PACIFICADORES (INSTAGRAM)
-# =========================================================
-st.subheader("Mapa de Pacificadores do Movimento da Paz")
-
-try:
-    ins_df = load_instagram(year, month)
-except Exception as e:
-    st.error("Tabela instagram_followers ainda não existe no banco.")
-    st.stop()
-
-if ins_df.empty:
-    st.info("Nenhum dado de Instagram encontrado para este período.")
-else:
-    centroids_path = BASE_DIR / "data" / "external" / "country_centroids.csv"
-
-    if centroids_path.exists():
-        cdf = pd.read_csv(centroids_path)
-
-        ins = ins_df.merge(cdf, left_on="country_iso3", right_on="iso3", how="left")
-        ins = ins[ins["latitude"].notnull()]
-
-        if not ins.empty:
-            ins["size"] = (ins["followers_count"] / ins["followers_count"].max()) * 30 + 5
-
-            fig2 = px.scatter_geo(
-                ins,
-                lat="latitude",
-                lon="longitude",
-                size="size",
-                hover_name="country_iso3",
-                projection="natural earth",
-                title="Pacificadores — Cada ponto representa seguidores"
-            )
-
-            fig2.update_traces(
-                marker=dict(color="goldenrod", opacity=0.9, line=dict(width=0))
-            )
-
-            st.plotly_chart(fig2, width="stretch")
-        else:
-            st.info("Não há coordenadas válidas para exibir os seguidores no mapa.")
-    else:
-        st.info("Adicione o arquivo: data/external/country_centroids.csv com colunas: iso3, latitude, longitude")
