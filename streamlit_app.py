@@ -3,7 +3,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import os
-from db.models import engine
 import sqlalchemy as sa
 
 st.set_page_config(page_title="Indicador de Paz — Movimento da Paz", layout="wide")
