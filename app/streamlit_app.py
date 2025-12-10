@@ -444,3 +444,88 @@ else:
 
     fig_hist.update_layout(margin=dict(l=0, r=0, t=50, b=0))
     st.plotly_chart(fig_hist, use_container_width=True)
+
+# =========================
+# RELATÓRIOS COM GRÁFICOS
+# =========================
+st.divider()
+st.subheader("📊 Relatórios da Evolução da Paz")
+
+st.markdown(
+    "Geração de relatórios dinâmicos por **ano** ou por **meses dentro de um ano específico**, "
+    "permitindo visualizar a evolução vibracional da paz ao longo do tempo."
+)
+
+# =========================
+# SELETOR DE MODO
+# =========================
+modo_relatorio = st.radio(
+    "Selecione o tipo de relatório:",
+    ["Relatório por Ano", "Relatório Mensal (Ano Específico)"]
+)
+
+# =========================
+# RELATÓRIO POR ANO
+# =========================
+if modo_relatorio == "Relatório por Ano":
+    st.markdown("### 🌍 Evolução Anual da Paz Global")
+
+    df_anual = (
+        df.groupby("year", as_index=False)["indicator_value"]
+        .mean()
+        .sort_values("year")
+    )
+
+    st.write("Tabela Resumo Anual")
+    st.dataframe(df_anual, use_container_width=True)
+
+    fig_anual = px.line(
+        df_anual,
+        x="year",
+        y="indicator_value",
+        markers=True,
+        title="Média Global do Índice de Paz por Ano"
+    )
+
+    fig_anual.update_layout(
+        yaxis_title="Índice Médio de Paz",
+        xaxis_title="Ano",
+        margin=dict(l=0, r=0, t=60, b=0),
+    )
+
+    st.plotly_chart(fig_anual, use_container_width=True)
+
+# =========================
+# RELATÓRIO MENSAL POR ANO
+# =========================
+else:
+    st.markdown("### 🗓️ Evolução Mensal da Paz — Ano Selecionado")
+
+    anos_disponiveis = sorted(df["year"].unique())
+    ano_escolhido = st.selectbox("Selecione o ano:", anos_disponiveis)
+
+    df_mensal = (
+        df[df["year"] == ano_escolhido]
+        .groupby("month", as_index=False)["indicator_value"]
+        .mean()
+        .sort_values("month")
+    )
+
+    st.write(f"Tabela Mensal — Ano {ano_escolhido}")
+    st.dataframe(df_mensal, use_container_width=True)
+
+    fig_mensal = px.line(
+        df_mensal,
+        x="month",
+        y="indicator_value",
+        markers=True,
+        title=f"Evolução Mensal do Índice de Paz — {ano_escolhido}"
+    )
+
+    fig_mensal.update_layout(
+        yaxis_title="Índice Médio de Paz",
+        xaxis_title="Mês",
+        margin=dict(l=0, r=0, t=60, b=0),
+    )
+
+    st.plotly_chart(fig_mensal, use_container_width=True)
