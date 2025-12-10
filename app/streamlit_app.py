@@ -446,15 +446,30 @@ else:
     st.plotly_chart(fig_hist, use_container_width=True)
 
 # =========================
-# RELATÓRIOS COM GRÁFICOS
+# RELATÓRIOS COM GRÁFICOS (GLOBAL OU POR PAÍS)
 # =========================
 st.divider()
 st.subheader("📊 Relatórios da Evolução da Paz")
 
 st.markdown(
     "Geração de relatórios dinâmicos por **ano** ou por **meses dentro de um ano específico**, "
-    "permitindo visualizar a evolução vibracional da paz ao longo do tempo."
+    "com opção de visualização **global** ou por **país individual**."
 )
+
+# =========================
+# SELEÇÃO DE ESCOPO
+# =========================
+escopo = st.radio(
+    "Selecione o escopo do relatório:",
+    ["Global", "País específico"]
+)
+
+df_relatorio = df.copy()
+
+if escopo == "País específico":
+    paises = sorted(df["country_code"].unique())
+    pais_escolhido = st.selectbox("Selecione o país:", paises)
+    df_relatorio = df[df["country_code"] == pais_escolhido]
 
 # =========================
 # SELETOR DE MODO
@@ -468,10 +483,13 @@ modo_relatorio = st.radio(
 # RELATÓRIO POR ANO
 # =========================
 if modo_relatorio == "Relatório por Ano":
-    st.markdown("### 🌍 Evolução Anual da Paz Global")
+    if escopo == "Global":
+        st.markdown("### 🌍 Evolução Anual da Paz Global")
+    else:
+        st.markdown(f"### 🏳️ Evolução Anual da Paz — {pais_escolhido}")
 
     df_anual = (
-        df.groupby("year", as_index=False)["indicator_value"]
+        df_relatorio.groupby("year", as_index=False)["indicator_value"]
         .mean()
         .sort_values("year")
     )
@@ -484,7 +502,7 @@ if modo_relatorio == "Relatório por Ano":
         x="year",
         y="indicator_value",
         markers=True,
-        title="Média Global do Índice de Paz por Ano"
+        title="Média do Índice de Paz por Ano"
     )
 
     fig_anual.update_layout(
@@ -499,13 +517,16 @@ if modo_relatorio == "Relatório por Ano":
 # RELATÓRIO MENSAL POR ANO
 # =========================
 else:
-    st.markdown("### 🗓️ Evolução Mensal da Paz — Ano Selecionado")
+    if escopo == "Global":
+        st.markdown("### 🗓️ Evolução Mensal da Paz Global — Ano Selecionado")
+    else:
+        st.markdown(f"### 🏳️ Evolução Mensal da Paz — {pais_escolhido}")
 
-    anos_disponiveis = sorted(df["year"].unique())
+    anos_disponiveis = sorted(df_relatorio["year"].unique())
     ano_escolhido = st.selectbox("Selecione o ano:", anos_disponiveis)
 
     df_mensal = (
-        df[df["year"] == ano_escolhido]
+        df_relatorio[df_relatorio["year"] == ano_escolhido]
         .groupby("month", as_index=False)["indicator_value"]
         .mean()
         .sort_values("month")
