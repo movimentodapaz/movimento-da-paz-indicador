@@ -227,11 +227,59 @@ else:
     st.warning("Nenhum dado encontrado para este período.")
 
 # =========================
-# BASE PARA MAPA HISTÓRICO
+# MAPA HISTÓRICO DA PAZ
 # =========================
 st.divider()
-st.subheader("⏳ Mapa Histórico da Paz (Em Construção)")
-st.info(
-    "Esta seção permitirá visualizar a evolução vibracional da paz ao longo do tempo, "
-    "com animação mês a mês e narrativa histórica dos saltos de consciência."
+st.subheader("⏳ Mapa Histórico da Paz — Evolução da Consciência Global")
+
+st.markdown(
+    "Acompanhe a expansão da paz ao longo do tempo, mês a mês, "
+    "revelando a dinâmica vibracional da humanidade."
 )
+
+# Ordenação temporal completa
+df_hist = df.sort_values(by=["year", "month"])
+
+# Criação de coluna temporal combinada
+df_hist["periodo"] = df_hist["year"].astype(str) + "-" + df_hist["month"].astype(str).str.zfill(2)
+
+periodos = df_hist["periodo"].unique()
+
+periodo_selecionado = st.slider(
+    "Selecione o período:",
+    0,
+    len(periodos) - 1,
+    len(periodos) - 1
+)
+
+df_periodo = df_hist[df_hist["periodo"] == periodos[periodo_selecionado]]
+
+if len(df_periodo) > 0:
+    fig_hist = px.choropleth(
+        df_periodo,
+        locations="country_code",
+        color="indicator_value",
+        hover_name="country_code",
+        color_continuous_scale=[
+            (0.0, "#0f172a"),
+            (0.25, "#1e3a8a"),
+            (0.50, "#0284c7"),
+            (0.70, "#7dd3fc"),
+            (0.85, "#dcfce7"),
+            (1.0, "#ecfdf5"),
+        ],
+        range_color=(
+            df["indicator_value"].min(),
+            df["indicator_value"].max()
+        ),
+        title=f"Mapa Histórico da Paz — {periodos[periodo_selecionado]}"
+    )
+
+    fig_hist.update_layout(
+        margin=dict(l=0, r=0, t=50, b=0),
+        transition={"duration": 600}
+    )
+
+    st.plotly_chart(fig_hist, use_container_width=True)
+else:
+    st.warning("Nenhum dado disponível para este período.")
