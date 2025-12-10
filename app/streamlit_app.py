@@ -288,13 +288,13 @@ elif len(periodos) == 1:
     st.success("A animação será ativada automaticamente quando houver mais de um período histórico.")
 
 # =========================
-# CASO 3 — DOIS OU MAIS PERÍODOS (SLIDER + PLAY)
+# CASO 3 — DOIS OU MAIS PERÍODOS (SLIDER + PLAY AUTOMÁTICO)
 # =========================
 else:
     if "slider_historico" not in st.session_state:
-        st.session_state.slider_historico = len(periodos) - 1
+        st.session_state.slider_historico = 0
 
-    st.markdown("### Seleção manual")
+    st.markdown("### Seleção manual do período")
 
     periodo_idx = st.slider(
         "Selecione o período:",
@@ -306,7 +306,27 @@ else:
     st.session_state.slider_historico = periodo_idx
 
     st.markdown("### Animação automática")
-    iniciar_animacao = st.button("▶️ Play animação")
+    col_play, col_vel, col_loop = st.columns([1, 1, 1])
+
+    with col_play:
+        iniciar_animacao = st.button("▶️ Play")
+
+    with col_vel:
+        velocidade = st.selectbox(
+            "Velocidade",
+            ["Lenta", "Normal", "Rápida"],
+            index=1
+        )
+
+    with col_loop:
+        loop = st.checkbox("Loop contínuo")
+
+    if velocidade == "Lenta":
+        delay = 1.2
+    elif velocidade == "Rápida":
+        delay = 0.3
+    else:
+        delay = 0.6
 
     mapa_container = st.empty()
 
@@ -337,13 +357,20 @@ else:
         fig_hist.update_layout(margin=dict(l=0, r=0, t=50, b=0))
         mapa_container.plotly_chart(fig_hist, use_container_width=True)
 
+    # Desenho inicial
     desenhar_mapa(periodo_idx)
 
+    # Execução da animação
     if iniciar_animacao:
-        for i in range(0, len(periodos)):
-            st.session_state.slider_historico = i
-            desenhar_mapa(i)
-            time.sleep(0.6)
+        executando = True
+        while executando:
+            for i in range(0, len(periodos)):
+                st.session_state.slider_historico = i
+                desenhar_mapa(i)
+                time.sleep(delay)
+
+            if not loop:
+                executando = False
 
         st.success("Animação concluída.")
 
