@@ -227,7 +227,7 @@ else:
     st.warning("Nenhum dado encontrado para este período.")
 
 # =========================
-# MAPA HISTÓRICO DA PAZ — ANIMAÇÃO
+# MAPA HISTÓRICO DA PAZ — ANIMAÇÃO (VERSÃO 100% BLINDADA)
 # =========================
 import time
 
@@ -246,19 +246,28 @@ if len(periodos) == 0:
 
 else:
     # =========================
-    # Controle manual via slider
+    # INICIALIZAÇÃO SEGURA DO ESTADO
+    # =========================
+    if "slider_historico" not in st.session_state:
+        st.session_state.slider_historico = len(periodos) - 1
+
+    # =========================
+    # CONTROLE MANUAL
     # =========================
     st.markdown("### Seleção manual")
+
     periodo_idx = st.slider(
         "Selecione o período:",
         0,
         len(periodos) - 1,
-        len(periodos) - 1,
-        key="slider_historico"
+        st.session_state.slider_historico
     )
 
+    # Sincroniza o estado
+    st.session_state.slider_historico = periodo_idx
+
     # =========================
-    # Botão de animação
+    # BOTÃO DE ANIMAÇÃO
     # =========================
     st.markdown("### Animação automática")
     iniciar_animacao = st.button("▶️ Play animação")
@@ -287,8 +296,9 @@ else:
                 df["indicator_value"].min(),
                 df["indicator_value"].max()
             ),
-            title=f"Mapa Histórico da Paz — {periodo}"
+            title=f"Mapa Histórico da Paz — {periodos[idx]}"
         )
+
         fig_hist.update_layout(margin=dict(l=0, r=0, t=50, b=0))
         mapa_container.plotly_chart(fig_hist, use_container_width=True)
 
@@ -296,13 +306,14 @@ else:
     desenhar_mapa(periodo_idx)
 
     # =========================
-    # Lógica de animação
+    # LÓGICA DE ANIMAÇÃO SEGURA
     # =========================
     if iniciar_animacao:
         for i in range(0, len(periodos)):
             st.session_state.slider_historico = i
             desenhar_mapa(i)
-            time.sleep(0.6)  # velocidade da animação (0.6s por frame)
+            time.sleep(0.6)
+
         st.success("Animação concluída.")
 
 # =========================
