@@ -554,9 +554,13 @@ else:
 # ======================================
 # EXPORTAÇÃO EM PDF DOS RELATÓRIOS
 # ======================================
-import pdfkit
 from io import BytesIO
 import base64
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+import tempfile
 
 st.divider()
 st.subheader("📄 Exportar Relatório em PDF")
