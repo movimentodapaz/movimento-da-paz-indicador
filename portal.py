@@ -8,8 +8,14 @@ from pathlib import Path
 # FUNÇÃO: RANKING GLOBAL DA PAZ VIVA
 # =====================================================
 
-def mostrar_ranking():
-    DB_PATH = Path(__file__).parent / "paz.db"
+from pathlib import Path
+import sqlite3
+
+BASE_DIR = Path(__file__).resolve().parent
+DB_PATH = BASE_DIR / "data" / "database" / "paz.db"
+
+def get_connection():
+    return sqlite3.connect(DB_PATH)
 
     def classificar_paz(valor):
         if pd.isna(valor):
