@@ -724,6 +724,24 @@ def gerar_pdf_reportlab(escopo, modo_relatorio, pais, ano, tabela, fig):
     buffer.seek(0)
     return buffer
 
+# ===========================================
+# VARIÁVEIS PADRÃO PARA O EXPORTADOR DE PDF
+# ===========================================
+
+# 1. País selecionado (pode ser None para relatório global)
+pais_pdf = None
+if escopo == "País":
+    pais_pdf = st.session_state.get("pais_selecionado", None)
+
+# 2. Ano selecionado
+ano_pdf = ano
+
+# 3. Tabela atual exibida na tela
+tabela_pdf = tabela_periodo if "tabela_periodo" in locals() else None
+
+# 4. Figura atual exibida na tela
+fig_pdf = fig if "fig" in locals() else None
+
 # Botão PDF
 if st.button("📄 Baixar PDF"):
     st.success("✅ Botão clicado com sucesso. Preparando PDF...")
