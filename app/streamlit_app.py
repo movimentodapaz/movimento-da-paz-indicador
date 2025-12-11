@@ -3,17 +3,23 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 import plotly.express as px
+
+# Exportação em PDF com ReportLab
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+    Image
+)
+
+# Utilidades de arquivo e buffer
 import tempfile
 from io import BytesIO
-try:
-    import reportlab
-    st.sidebar.success("ReportLab carregado com sucesso.")
-except Exception as e:
-    st.sidebar.error(f"ReportLab NÃO carregou: {e}")
 
 # =========================
 # CONFIG GERAL DA PÁGINA
