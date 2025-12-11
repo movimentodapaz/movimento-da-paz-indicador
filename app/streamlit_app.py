@@ -742,7 +742,22 @@ tabela_pdf = tabela_periodo if "tabela_periodo" in locals() else None
 # 4. Figura atual exibida na tela
 fig_pdf = fig if "fig" in locals() else None
 
+# ===========================================
+# VARIÁVEIS PADRÃO PARA O EXPORTADOR DE PDF
+# ===========================================
+
+pais_pdf = None
+if escopo == "País":
+    pais_pdf = st.session_state.get("pais_selecionado", None)
+
+ano_pdf = ano
+
+tabela_pdf = tabela_periodo if "tabela_periodo" in locals() else None
+
+fig_pdf = fig if "fig" in locals() else None
+
 # Botão PDF
+
 if st.button("📄 Baixar PDF"):
     st.success("✅ Botão clicado com sucesso. Preparando PDF...")
 
