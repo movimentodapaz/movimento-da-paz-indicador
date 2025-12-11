@@ -4,4 +4,4 @@ numpy
 plotly
 sqlalchemy
 reportlab
-kaleido
+kaleido==0.2.1
