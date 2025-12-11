@@ -10,6 +10,12 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 import tempfile
 from io import BytesIO
 
+try:
+    import reportlab
+    st.sidebar.success("ReportLab carregado com sucesso.")
+except Exception as e:
+    st.sidebar.error(f"ReportLab NÃO carregou: {e}")
+
 # =========================
 # CONFIG GERAL DA PÁGINA
 # =========================
