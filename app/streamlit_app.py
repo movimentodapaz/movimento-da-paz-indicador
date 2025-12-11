@@ -3,6 +3,12 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 import plotly.express as px
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+import tempfile
+from io import BytesIO
 
 # =========================
 # CONFIG GERAL DA PÁGINA
@@ -657,9 +663,3 @@ if st.button("📄 Baixar PDF"):
             tabela=tabela_for_pdf,
             grafico_html=grafico_html
         )
-
-        pdf_bytes = pdfkit.from_string(html, False)
-
-        b64 = base64.b64encode(pdf_bytes).decode()
-        href = f'<a href="data:application/pdf;base64,{b64}" download="relatorio_paz.pdf">Clique aqui para baixar o PDF</a>'
-        st.markdown(href, unsafe_allow_html=True)
