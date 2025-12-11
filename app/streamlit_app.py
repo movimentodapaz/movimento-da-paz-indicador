@@ -9,7 +9,6 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
 import tempfile
 from io import BytesIO
-
 try:
     import reportlab
     st.sidebar.success("ReportLab carregado com sucesso.")
