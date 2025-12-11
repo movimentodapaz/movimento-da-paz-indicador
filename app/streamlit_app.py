@@ -665,12 +665,28 @@ else:
 
 # Botão PDF
 if st.button("📄 Baixar PDF"):
-    with st.spinner("Gerando PDF..."):
-        html = gerar_html_do_relatorio(
-            escopo,
-            modo_relatorio,
-            pais=pais_for_pdf,
-            ano=ano_for_pdf,
-            tabela=tabela_for_pdf,
-            grafico_html=grafico_html
+    st.success("✅ Botão clicado com sucesso. Preparando PDF...")
+
+    try:
+        with st.spinner("Gerando PDF..."):
+            pdf_buffer = gerar_pdf_reportlab(
+                escopo=escopo,
+                modo_relatorio=modo_relatorio,
+                pais=pais_pdf,
+                ano=ano_pdf,
+                tabela=tabela_pdf,
+                fig=fig_pdf,
+            )
+
+        st.download_button(
+            label="📥 Clique aqui para baixar o PDF",
+            data=pdf_buffer,
+            file_name="relatorio_paz.pdf",
+            mime="application/pdf",
         )
+
+        st.success("✅ PDF gerado com sucesso!")
+
+    except Exception as e:
+        st.error("❌ Erro ao gerar o PDF:")
+        st.code(str(e))
