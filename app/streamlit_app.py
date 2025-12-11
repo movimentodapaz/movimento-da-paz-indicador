@@ -663,6 +663,67 @@ else:
     grafico_html = fig_mensal.to_html(full_html=False)
     ano_for_pdf = ano_escolhido
 
+def gerar_pdf_reportlab(escopo, modo_relatorio, pais, ano, tabela, fig):
+    buffer = BytesIO()
+
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
+    elementos = []
+
+    # Título
+    titulo = "Relatório do Indicador Global de Paz"
+    elementos.append(Paragraph(f"<b>{titulo}</b>", styles["Title"]))
+    elementos.append(Spacer(1, 12))
+
+    # Subtítulo
+    subtitulo = f"Escopo: {escopo} | Modo: {modo_relatorio}"
+    elementos.append(Paragraph(subtitulo, styles["Normal"]))
+    elementos.append(Spacer(1, 12))
+
+    if escopo == "País" and pais:
+        elementos.append(Paragraph(f"País: {pais}", styles["Normal"]))
+    if ano:
+        elementos.append(Paragraph(f"Ano: {ano}", styles["Normal"]))
+
+    elementos.append(Spacer(1, 16))
+
+    # Tabela de dados
+    if tabela is not None and not tabela.empty:
+        dados_tabela = [tabela.columns.tolist()] + tabela.values.tolist()
+
+        tabela_pdf = Table(dados_tabela)
+        tabela_pdf.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+        ]))
+
+        elementos.append(Paragraph("Dados do Período:", styles["Heading2"]))
+        elementos.append(Spacer(1, 8))
+        elementos.append(tabela_pdf)
+        elementos.append(Spacer(1, 16))
+
+    # Gráfico (se existir)
+    if fig is not None:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
+            fig.write_image(tmpfile.name)
+            elementos.append(Paragraph("Visualização Gráfica:", styles["Heading2"]))
+            elementos.append(Spacer(1, 8))
+            elementos.append(Image(tmpfile.name, width=400, height=300))
+            elementos.append(Spacer(1, 16))
+
+    # Rodapé
+    rodape = "Movimento da Paz — Indicador Global de Paz"
+    elementos.append(Spacer(1, 24))
+    elementos.append(Paragraph(rodape, styles["Italic"]))
+
+    # Gerar PDF
+    doc.build(elementos)
+    buffer.seek(0)
+    return buffer
+
 # Botão PDF
 if st.button("📄 Baixar PDF"):
     st.success("✅ Botão clicado com sucesso. Preparando PDF...")
