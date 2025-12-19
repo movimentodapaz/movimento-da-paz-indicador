@@ -1,110 +1,51 @@
 import streamlit as st
-import pandas as pd
-import plotly.express as px
-import sqlite3
-from pathlib import Path
 
-# ============================================
-# CONFIGURAÇÃO DA PÁGINA
-# ============================================
-st.set_page_config(page_title="Indicador de Paz — Movimento da Paz", layout="wide")
-st.title("Indicador de Paz — Movimento da Paz")
+# =========================
+# CONFIGURAÇÃO DA PÁGINA (SEO)
+# =========================
 
-# ============================================
-# LOCALIZAÇÃO ROBUSTA DO BANCO SQLITE
-# ============================================
-BASE_DIR = Path(__file__).resolve().parent
+st.set_page_config(
+    page_title="Movimento da Paz Viva | Mapa Global dos Pacificadores",
+    layout="wide"
+)
 
-candidatos = [
-    BASE_DIR / "data" / "database" / "paz.db",
-    BASE_DIR.parent / "data" / "database" / "paz.db",
-]
+# =========================
+# META DESCRIPTION (SEO)
+# =========================
 
-DB_PATH = None
-for caminho in candidatos:
-    if caminho.exists():
-        DB_PATH = caminho
-        break
-
-if DB_PATH is None:
-    st.error(
-        "❌ Banco de dados `paz.db` não foi encontrado.\n\n"
-        "Caminhos verificados:\n"
-        + "\n".join(f"- {c}" for c in candidatos)
-    )
-    st.stop()
-
-# Opcional: exibir caminho do banco para depuração
-st.caption(f"🗄️ Usando banco de dados em: `{DB_PATH}`")
-
-# ============================================
-# FUNÇÃO PARA CARREGAR DADOS AGREGADOS
-# ============================================
-def load_aggregated(year: int, month: int) -> pd.DataFrame:
-    """Carrega o índice de paz por país a partir do SQLite.
-
-    Se houver erro de SQLite, exibe a causa na tela e retorna DataFrame vazio.
+st.markdown(
     """
-    try:
-        conn = sqlite3.connect(DB_PATH)
+    <meta name="description" content="
+    Movimento da Paz Viva — Mapa global dos Pacificadores.
+    Visualização interativa da expansão da paz no planeta,
+    com dados reais, metodologia ética e distribuição geográfica
+    por cidade e país.
+    ">
+    """,
+    unsafe_allow_html=True
+)
 
-        query = """
-            SELECT 
-                c.country_code AS country_iso3,
-                c.country_name,
-                m.indicator_value AS peace_score_0_100
-            FROM country_metrics m
-            JOIN country_metadata c
-              ON m.country_code = c.country_code
-            WHERE m.year = ? AND m.month = ?
-        """
+# =========================
+# TEXTO INDEXÁVEL (PARA BUSCADORES)
+# =========================
 
-        df = pd.read_sql_query(query, conn, params=(year, month))
-        conn.close()
-        return df
+st.markdown("""
+# 🌍 Movimento da Paz Viva
 
-    except sqlite3.OperationalError as e:
-        st.error(
-            "⚠️ Erro ao acessar o banco SQLite (OperationalError):\n\n"
-            f"`{e}`\n\n"
-            "Verifique se as tabelas `country_metrics` e `country_metadata` "
-            "existem e se foram criadas corretamente."
-        )
-        return pd.DataFrame()
-    except Exception as e:
-        st.error(f"⚠️ Erro inesperado ao carregar dados: `{e}`")
-        return pd.DataFrame()
+O **Movimento da Paz Viva** é uma iniciativa consciente que demonstra,
+de forma ética e verificável, como a **paz interior sustentada por indivíduos**
+gera impacto coletivo mensurável no mundo.
 
-# ============================================
-# FILTROS (ANO / MÊS)
-# ============================================
-col1, col2 = st.columns([3, 1])
-with col2:
-    st.header("Filtro")
-    year = st.selectbox("Ano", options=list(range(2025, 2031)), index=0)
-    month = st.selectbox("Mês", options=list(range(1, 13)), index=0)
+Por meio de um **mapa global interativo**, o projeto apresenta a
+**distribuição geográfica dos Pacificadores** — pessoas que escolheram
+viver e irradiar a paz como prática diária.
 
-# ============================================
-# MAPA GLOBAL DA PAZ
-# ============================================
-st.subheader(f"Mapa Global — Paz ({year}-{month:02d})")
+Os dados apresentados são públicos, agregados e auditáveis,
+respeitando integralmente a privacidade individual.
+""")
 
-agg = load_aggregated(year, month)
+# =========================
+# REDIRECIONAMENTO PARA O MAPA
+# =========================
 
-if agg.empty:
-    st.warning(
-        "Nenhum dado encontrado para este período.\n\n"
-        "Se você acabou de criar o banco, verifique se há registros em "
-        "`country_metrics` para o ano/mês selecionado."
-    )
-else:
-    fig = px.choropleth(
-        agg,
-        locations="country_iso3",
-        color="peace_score_0_100",
-        color_continuous_scale="Blues",
-        range_color=(0, 100),
-        hover_name="country_name",
-        title="Índice Global da Paz (0–100)",
-    )
-    st.plotly_chart(fig, width="stretch")
+st.switch_page("pages/04_mapa_pacificadores.py")
